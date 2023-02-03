@@ -6,31 +6,25 @@ import {
   SkeletonCircle,
   Flex,
 } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
-import { useGetMetrics } from "../../hooks/useGetMetrics";
 import { Apy } from "../../components/Apy";
 import { UserStats } from "./UserStats";
-import { toStringDec2 } from "../../lib/util";
 import { DisconnectedPage } from "../../components/DisconnectedPage";
 import { LiquidityManager } from "./LiquidityManager";
 import { LiquidityPoolStats } from "./LiquidityPoolStats";
+import { useAccount } from "wagmi";
 
 const Liquidity = () => {
-  const { selector } = useWalletSelector();
+  const { isConnected } = useAccount();
 
-  const { data: metrics } = useGetMetrics();
-
-  if (!selector.isSignedIn()) {
+  if (!isConnected) {
     return (
       <>
         <Flex justifyContent="center" mb="10px">
-          <SkeletonCircle boxSize="120px" isLoaded={metrics !== undefined}>
-            {metrics && (
-              <Apy data={toStringDec2(metrics.lp_3_day_apy)} boxSize="120px" />
-            )}
+          <SkeletonCircle boxSize="120px" isLoaded>
+            <Apy data="9.99" />
           </SkeletonCircle>
         </Flex>
-        <DisconnectedPage title="NEAR / stNEAR Pool">
+        <DisconnectedPage title="ETHEREUM / metaETHEREUM Pool">
           <LiquidityPoolStats />
         </DisconnectedPage>
       </>
@@ -41,10 +35,8 @@ const Liquidity = () => {
     <Container maxW="container.lg" className="flex">
       <Center>
         <VStack mb="20px" rowGap="10px">
-          <SkeletonCircle boxSize="120px" isLoaded={metrics !== undefined}>
-            {metrics && (
-              <Apy data={toStringDec2(metrics.lp_3_day_apy)} boxSize="120px" />
-            )}
+          <SkeletonCircle boxSize="120px" isLoaded>
+            <Apy data="9.99" />
           </SkeletonCircle>
           <Heading
             as="h1"
@@ -53,7 +45,7 @@ const Liquidity = () => {
             fontWeight="500"
             fontSize="2em"
           >
-            NEAR / stNEAR Pool
+            ETHEREUM / metaETHEREUM Pool
           </Heading>
           <LiquidityPoolStats />
           <LiquidityManager />

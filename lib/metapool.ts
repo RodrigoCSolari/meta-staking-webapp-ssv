@@ -1,128 +1,48 @@
-import { Wallet } from "@near-wallet-selector/core";
-import { MetapoolAccountInfo, MetapoolContractState } from "./metapool.types";
-import { metaPoolMethods } from "./methods";
-import { callChangeMethod, callViewMethod, CONTRACT_ID } from "./near";
-import { ntoy } from "./util";
-const contractId: string = CONTRACT_ID!;
+import { ethers } from "ethers";
+import { contractMethods } from "./methods";
+import { callChangeMethod, callViewMethod } from "./ethereum";
+import { etow } from "./util";
 
-export const getMetapoolAccountInfo = async (
-  accountId: string
-): Promise<MetapoolAccountInfo> => {
-  return callViewMethod(
-    metaPoolMethods.getAccountInfo,
-    {
-      account_id: accountId,
-    },
-    contractId
+export const stake = (signer: ethers.Signer, depositValue: string) => {
+  return callChangeMethod(
+    contractMethods.deposit,
+    [],
+    signer!,
+    etow(depositValue)
   );
 };
 
-export const getMetapoolContractState =
-  async (): Promise<MetapoolContractState> => {
-    return callViewMethod(metaPoolMethods.getContractState, {}, contractId);
+export const withdraw = (signer: ethers.Signer, withdrawValue: string) => {
+  return callChangeMethod(
+    contractMethods.withdraw,
+    [etow(withdrawValue)],
+    signer!,
+    etow("0")
+  );
+};
+
+export const getContractData = async (
+  provider: ethers.providers.Provider,
+  address = "0x0000000000000000000000000000000000000000"
+) => {
+  let [
+    contractBalance,
+    minEthDeposit,
+    userBalance,
+    validatorsCount,
+    withdrawFee,
+  ] = await Promise.all([
+    callViewMethod(contractMethods.getContractBalance, [], provider),
+    callViewMethod(contractMethods.minEthDeposit, [], provider),
+    callViewMethod(contractMethods.balance, [address], provider),
+    callViewMethod(contractMethods.getValidatorsCount, [], provider),
+    callViewMethod(contractMethods.withdrawFee, [], provider),
+  ]);
+  return {
+    contractBalance,
+    minEthDeposit,
+    userBalance,
+    validatorsCount,
+    withdrawFee,
   };
-
-export const depositAndStake = (
-  wallet: Wallet,
-  accountId: string,
-  nearsToDeposit: number
-) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.DepositAndStake,
-    {},
-    contractId,
-    ntoy(nearsToDeposit)
-  );
-};
-
-export const liquidUnstake = (
-  wallet: Wallet,
-  accountId: string,
-  stnearToBurn: number,
-  minExpectedNear: number
-) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.liquidUnstake,
-    {
-      st_near_to_burn: ntoy(stnearToBurn),
-      min_expected_near: ntoy(minExpectedNear),
-    },
-    contractId,
-    "0"
-  );
-};
-
-export const unstake = (wallet: Wallet, accountId: string, amount: number) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.unstake,
-    { amount: ntoy(amount) },
-    contractId,
-    "0"
-  );
-};
-
-export const computeCurrentUnstakingDelay = (amount: number) => {
-  return callViewMethod(
-    metaPoolMethods.computeCurrentUnstakingDelay,
-    { amount: ntoy(amount) },
-    contractId
-  );
-};
-
-export const withdrawUnstaked = (wallet: Wallet, accountId: string) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.withdrawUnstaked,
-    {},
-    contractId,
-    "0"
-  );
-};
-
-export const nslpAddLiquidity = (
-  wallet: Wallet,
-  accountId: string,
-  amount: number
-) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.nslpAddLiquidity,
-    {},
-    contractId,
-    ntoy(amount)
-  );
-};
-
-export const nslpRemoveLiquidity = (
-  wallet: Wallet,
-  accountId: string,
-  amount: number
-) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.nslpRemoveLiquidity,
-    { amount: ntoy(amount) },
-    contractId,
-    "0"
-  );
-};
-
-export const harvestMeta = (wallet: Wallet, accountId: string) => {
-  return callChangeMethod(
-    wallet,
-    accountId,
-    metaPoolMethods.harvestMeta,
-    {},
-    contractId,
-    "1"
-  );
 };

@@ -1,61 +1,52 @@
 import { Button } from "@chakra-ui/react";
-import { useRouter } from "next/router";
 import * as React from "react";
-import { useWalletSelector } from "../contexts/WalletSelectorContext";
-import { signOut } from "../lib/near";
 import { showShortAccountId } from "../lib/util";
+
+import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAccount } from "wagmi";
 
 type Props = React.ComponentProps<typeof Button>;
 
 const ButtonWallet = (props: Props) => {
-  const { selector, modal, accounts, accountId } = useWalletSelector();
-  const router = useRouter();
+  const { address } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const { openAccountModal } = useAccountModal();
 
-  if (!selector.isSignedIn()) {
-    const handleSignIn = () => {
-      modal.show();
+  if (address) {
+    const handleAccountClick = () => {
+      if (openAccountModal) {
+        openAccountModal();
+      }
     };
-    return (
-      <Button
-        size="sm"
-        colorScheme="purple"
-        minW="auto"
-        onClick={() => handleSignIn()}
-        {...props}
-      >
-        {"Connect Wallet"}
-      </Button>
-    );
-  }
 
-  if (accountId) {
     return (
       <Button
         size="sm"
         color="purple.500"
         variant="outline"
-        onClick={() => router.push("/harvest")}
+        onClick={handleAccountClick}
         minW="auto"
         {...props}
       >
-        {showShortAccountId(accountId)}
+        {showShortAccountId(address)}
       </Button>
     );
   }
 
-  const handleSignOut = async () => {
-    signOut(selector);
+  const handleSignIn = () => {
+    if (openConnectModal) {
+      openConnectModal();
+    }
   };
-
   return (
     <Button
       size="sm"
-      colorScheme="purple.500"
+      colorScheme="purple"
       minW="auto"
-      onClick={() => handleSignOut()}
+      onClick={handleSignIn}
       {...props}
     >
-      {"Disconnect Wallet"}
+      {"Connect Wallet"}
     </Button>
   );
 };

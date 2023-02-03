@@ -1,10 +1,9 @@
 import { useQuery } from "react-query";
 import { REFETCH_INTERVAL } from "../constants";
-import { getMetrics } from "../queries/getMetrics";
-import { Metrics } from "../queries/getMetrics.types";
+import { getEthereumDollarPrice } from "../queries/getEthereumDollarPrice";
 
-export const useGetMetrics = () => {
-  return useQuery<Metrics>("metrics", () => getMetrics(), {
+export const useGetEthereumDollarPrice = () => {
+  return useQuery("ethereumDollarPrice", () => getEthereumDollarPrice(), {
     onError: (err) => {
       console.error(err);
     },

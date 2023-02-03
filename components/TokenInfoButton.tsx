@@ -1,5 +1,4 @@
-import { InfoIcon } from "@chakra-ui/icons";
-import { Flex, Skeleton, Spacer, Text, Tooltip } from "@chakra-ui/react";
+import { Flex, Skeleton, Text } from "@chakra-ui/react";
 import React, { ReactNode } from "react";
 
 type Props = {

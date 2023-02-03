@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { toNumber } from "../../lib/util";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import {
@@ -7,15 +8,15 @@ import {
 
 export const checkTxErrorAmounts = (
   inputAmount: string,
-  accountAmount: string,
-  minAmount: number,
+  accountAmount: ethers.BigNumber,
+  minAmount: ethers.BigNumber,
   txName: "Stake" | "Add" | "Remove"
 ) => {
   try {
-    const txAmount = toNumber(inputAmount.toString());
-    checkMinTxAmount(txAmount, minAmount, txName);
-    const balanceName = txName !== "Remove" ? "NEAR Balance" : "Shared Value";
-    checkMaxAccountAmount(accountAmount, txAmount, balanceName);
+    checkMinTxAmount(inputAmount, minAmount, txName);
+    const balanceName =
+      txName !== "Remove" ? "ETHEREUM Balance" : "Shared Value";
+    checkMaxAccountAmount(accountAmount, inputAmount, balanceName);
   } catch (ex) {
     return getErrorMessage(ex);
   }

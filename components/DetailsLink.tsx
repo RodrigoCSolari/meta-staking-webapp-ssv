@@ -1,24 +1,22 @@
-import { ExternalLinkIcon } from "@chakra-ui/icons";
 import { Link } from "@chakra-ui/react";
 import React from "react";
+import { getConfig } from "../config";
 
 type Props = {
   hash: string;
 };
 
-const HashDetailLink = ({ hash }: Props) => {
+export const DetailsLink = ({ hash }: Props) => {
+  const explorerUrl = getConfig().explorerUrl;
   return (
     <Link
       target="_blank"
       fontSize=".8em"
-      href={`${hash}`}
+      href={`${explorerUrl}/tx/${hash}`}
       textDecoration="underline"
       color="#fffb"
-      isExternal
     >
-      See Transaction Details <ExternalLinkIcon mx="2px" />
+      See Transaction Details
     </Link>
   );
 };
-
-export default HashDetailLink;

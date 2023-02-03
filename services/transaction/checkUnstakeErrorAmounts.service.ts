@@ -1,24 +1,18 @@
+import { BigNumber } from "ethers";
 import { toNumber } from "../../lib/util";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import {
   checkMaxAccountAmount,
-  checkMaxLpAmount,
   checkMinUnstakeAmount,
 } from "../../utils/unstakeHandlers";
 
 export const checkUnstakeErrorAmounts = (
   inputAmount: string,
-  accountAmount: string,
-  lpLiquidity?: string
+  accountAmount: BigNumber
 ) => {
   try {
-    const amountToUnstake = toNumber(inputAmount.toString());
-    const token = lpLiquidity ? "stNEAR" : "NEAR";
-    checkMinUnstakeAmount(amountToUnstake, accountAmount, token);
-    checkMaxAccountAmount(accountAmount, amountToUnstake, "stNEAR Balance");
-    if (lpLiquidity) {
-      checkMaxLpAmount(lpLiquidity, amountToUnstake);
-    }
+    checkMinUnstakeAmount(inputAmount, accountAmount);
+    checkMaxAccountAmount(accountAmount, inputAmount, "ETHEREUM Balance");
   } catch (ex) {
     return getErrorMessage(ex);
   }

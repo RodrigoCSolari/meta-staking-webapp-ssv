@@ -1,67 +1,45 @@
-export const getConfig = (env: string) => {
-  const CONTRACT_NAME =
-    process.env.NEXT_PUBLIC_CONTRACT_ID || "meta-v2.pool.testnet";
+import { localhost } from "@wagmi/chains";
+import { goerli, mainnet } from "wagmi";
+import CONTRACT_JSON from "./DepAndWith.json";
+
+export const getConfig = () => {
+  const env = process.env.NEXT_PUBLIC_VERCEL_ENV;
   switch (env) {
     case "production":
     case "mainnet":
       return {
         networkId: "mainnet",
-        nodeUrl: "https://rpc.mainnet.near.org",
-        contractName: CONTRACT_NAME,
-        walletUrl: "https://wallet.near.org",
-        helperUrl: "https://helper.mainnet.near.org",
-        explorerUrl: "https://explorer.mainnet.near.org",
+        wagmiNetwork: mainnet,
+        rcpUrl: "https://mainnet.infura.io/v3/",
+        contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_MAINNET,
+        explorerUrl: "https://etherscan.io",
         metapoolUrl: "https://metapool.app/dapp/mainnet/meta",
-        refFinance: "https://www.ref.finance/",
+        uniswap: "https://uniswap.org/",
+        abi: CONTRACT_JSON.abi,
       };
     case "development":
-    case "testnet":
+    case "goerli":
     case "preview":
       return {
-        networkId: "testnet",
-        nodeUrl: "https://rpc.testnet.near.org",
-        contractName: CONTRACT_NAME,
-        walletUrl: "https://wallet.testnet.near.org",
-        helperUrl: "https://helper.testnet.near.org",
-        explorerUrl: "https://explorer.testnet.near.org",
-        metapoolUrl: "https://metapool.app/dapp/testnet/meta",
-        refFinance: "https://www.ref.finance/",
+        networkId: "goerli",
+        wagmiNetwork: goerli,
+        nodeUrl: "https://goerli.infura.io/v3/",
+        contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_GOERLI,
+        explorerUrl: "https://goerli.etherscan.io",
+        metapoolUrl: "https://metapool.app/dapp/mainnet/meta",
+        uniswap: "https://uniswap.org/",
+        abi: CONTRACT_JSON.abi,
       };
-    case "betanet":
+    case "localhost":
       return {
-        networkId: "betanet",
-        nodeUrl: "https://rpc.betanet.near.org",
-        contractName: CONTRACT_NAME,
-        walletUrl: "https://wallet.betanet.near.org",
-        helperUrl: "https://helper.betanet.near.org",
-        explorerUrl: "https://explorer.betanet.near.org",
-        metapoolUrl: "https://metapool.app/dapp/testnet/meta",
-        refFinance: "https://www.ref.finance/",
-      };
-    case "local":
-      return {
-        networkId: "local",
-        nodeUrl: "http://localhost:3030",
-        keyPath: `${process.env.HOME}/.near/validator_key.json`,
-        walletUrl: "http://localhost:4000/wallet",
-        metapoolUrl: "https://metapool.app/dapp/testnet/meta",
-        refFinance: "https://www.ref.finance/",
-        contractName: CONTRACT_NAME,
-      };
-    case "test":
-    case "ci":
-      return {
-        networkId: "shared-test",
-        nodeUrl: "https://rpc.ci-testnet.near.org",
-        contractName: CONTRACT_NAME,
-        masterAccount: "test.near",
-      };
-    case "ci-betanet":
-      return {
-        networkId: "shared-test-staging",
-        nodeUrl: "https://rpc.ci-betanet.near.org",
-        contractName: CONTRACT_NAME,
-        masterAccount: "test.near",
+        networkId: "localhost",
+        wagmiNetwork: localhost,
+        nodeUrl: "http://localhost:8545",
+        contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_LOCALHOST,
+        explorerUrl: "",
+        metapoolUrl: "https://metapool.app/dapp/mainnet/meta",
+        uniswap: "https://uniswap.org/",
+        abi: CONTRACT_JSON.abi,
       };
     default:
       throw Error(

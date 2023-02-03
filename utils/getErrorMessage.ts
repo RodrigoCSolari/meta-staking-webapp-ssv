@@ -22,9 +22,12 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
 
 export function getErrorMessage(error: unknown) {
   const errorMsg = toErrorWithMessage(error).message;
-  //if (errorMsg.includes("Smart contract panicked")) {
-  //  return errorMsg.split("'")[1];
-  if (errorMsg !== "") {
+
+  if (errorMsg.includes("(action=")) {
+    return errorMsg.split("(action=")[0];
+  } else if (errorMsg.includes("[ See:")) {
+    return errorMsg.split("[ See:")[0];
+  } else if (errorMsg !== "") {
     return errorMsg;
   } else {
     return `An Error Has Occurred. Please Try Again, And If The Problem Persists, Contact The System Administrator.`;

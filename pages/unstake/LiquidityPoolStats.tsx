@@ -1,30 +1,56 @@
-import { Divider, Skeleton } from "@chakra-ui/react";
 import React from "react";
+import { Divider, Skeleton } from "@chakra-ui/react";
 import { InfoContainer } from "../../components/InfoContainer";
 import TokenInfo from "../../components/TokenInfo";
-import { useGetMetapoolContractState } from "../../hooks/useGetMetapoolContractState";
-import { toStringDec, yton } from "../../lib/util";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { useGetEthereumDollarPrice } from "../../hooks/useGetEthereumDollarPrice";
+import { toStringDec2, wtoeCommify, weiToDollarStr } from "../../lib/util";
 
 export const LiquidityPoolStats = () => {
-  const { data: contractState } = useGetMetapoolContractState();
+  const { data: contractData } = useGetContractData();
+  const { data: ethereumDollarPrice } = useGetEthereumDollarPrice();
 
   return (
     <InfoContainer>
-      <Skeleton isLoaded={contractState !== undefined}>
+      <Skeleton isLoaded={contractData !== undefined}>
         <TokenInfo
-          description="Current Liquidity"
-          tooltip="The amount of NEAR in the liquidity pool"
-          amount={toStringDec(yton(contractState?.nslp_liquidity!))}
-          symbol="Ⓝ"
+          description="Unstake Fee"
+          tooltip=""
+          amount={"0"}
+          symbol="%"
         />
       </Skeleton>
       <Divider />
-      <Skeleton isLoaded={contractState !== undefined}>
+      <Skeleton isLoaded={contractData !== undefined}>
         <TokenInfo
-          description="Target Liquidity"
-          tooltip="If liquidity is below target, the unstake fee and the LP benefits are higher"
-          amount={toStringDec(yton(contractState?.nslp_target!))}
-          symbol="Ⓝ"
+          description="Total Value"
+          tooltip="Total ETHEREUM value in the contract"
+          amount={wtoeCommify(contractData?.contractBalance)}
+          symbol="Ⓔ"
+        />
+      </Skeleton>
+      <Divider />
+      <Skeleton isLoaded={ethereumDollarPrice !== undefined}>
+        <TokenInfo
+          description="ETHEREUM price USD"
+          amount={toStringDec2(ethereumDollarPrice!)}
+          symbol="$"
+        />
+      </Skeleton>
+      <Divider />
+      <Skeleton
+        isLoaded={
+          contractData !== undefined && ethereumDollarPrice !== undefined
+        }
+      >
+        <TokenInfo
+          description="Total Value USD"
+          tooltip="Total value of the contract in USD"
+          amount={weiToDollarStr(
+            contractData?.contractBalance,
+            ethereumDollarPrice
+          )}
+          symbol="$"
         />
       </Skeleton>
     </InfoContainer>
