@@ -1,1 +1,1 @@
-# meta-staking-webapp-react
+# meta-staking-webapp-ssv

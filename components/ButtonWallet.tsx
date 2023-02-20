@@ -2,19 +2,27 @@ import { Button } from "@chakra-ui/react";
 import * as React from "react";
 import { showShortAccountId } from "../lib/util";
 
-import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
+import {
+  useAccountModal,
+  useChainModal,
+  useConnectModal,
+} from "@rainbow-me/rainbowkit";
+import { useAccount, useNetwork } from "wagmi";
 
 type Props = React.ComponentProps<typeof Button>;
 
 const ButtonWallet = (props: Props) => {
   const { address } = useAccount();
+  const { chain } = useNetwork();
   const { openConnectModal } = useConnectModal();
   const { openAccountModal } = useAccountModal();
+  const { openChainModal } = useChainModal();
 
-  if (address) {
+  if (address && chain) {
     const handleAccountClick = () => {
-      if (openAccountModal) {
+      if (chain.unsupported && openChainModal) {
+        openChainModal();
+      } else if (openAccountModal) {
         openAccountModal();
       }
     };
@@ -22,13 +30,13 @@ const ButtonWallet = (props: Props) => {
     return (
       <Button
         size="sm"
-        color="purple.500"
+        color={chain.unsupported ? "red.600" : "purple.500"}
         variant="outline"
         onClick={handleAccountClick}
         minW="auto"
         {...props}
       >
-        {showShortAccountId(address)}
+        {chain.unsupported ? "Wrong Network" : showShortAccountId(address)}
       </Button>
     );
   }
