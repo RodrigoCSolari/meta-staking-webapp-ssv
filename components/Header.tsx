@@ -16,36 +16,26 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
-import { signOut } from "../lib/near";
 import { useRouter } from "next/router";
-import { useWalletSelector } from "../contexts/WalletSelectorContext";
-import { AccountView } from "near-api-js/lib/providers/provider";
-import ButtonWallet from "./ButtonWallet";
 import { useQueryClient } from "react-query";
 import { IconLink } from "./IconLink";
 import { NavLink } from "./NavLink";
-
-export type Account = AccountView & {
-  account_id: string;
-};
+import { useAccount } from "wagmi";
+import ButtonWallet from "./ButtonWallet";
 
 const Header: React.FC<ButtonProps> = () => {
-  const { selector, accountId } = useWalletSelector();
+  const { isConnected } = useAccount();
 
   const isDesktop = useBreakpointValue({ base: false, lg: true });
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const handleSignOut = async () => {
-    signOut(selector);
-  };
-
   useEffect(() => {
-    if (selector.isSignedIn() && accountId) {
-      queryClient.removeQueries("nearBalance");
-      queryClient.removeQueries("metapoolAccountInfo");
+    if (isConnected) {
+      queryClient.removeQueries("ethereumBalance");
+      queryClient.removeQueries("contractData");
     }
-  }, [accountId, selector.isSignedIn()]);
+  }, [isConnected]);
 
   return (
     <Box as="section" pb={{ base: "2", md: "2" }}>
@@ -76,13 +66,11 @@ const Header: React.FC<ButtonProps> = () => {
                 <HStack
                   display={{ base: "none", md: "flex" }}
                   w="540px"
-                  justifyContent="space-between"
+                  justifyContent="space-around"
                 >
                   <NavLink href="/">Stake</NavLink>
                   <NavLink href="/unstake">Unstake</NavLink>
                   <NavLink href="/liquidity">Liquidity</NavLink>
-                  <NavLink href="/harvest">Harvest</NavLink>
-                  <NavLink href="/delayed-unstake">Delayed-Unstake</NavLink>
                   <NavLink href="/faq">FAQ</NavLink>
                 </HStack>
                 <Spacer />
@@ -139,27 +127,10 @@ const Header: React.FC<ButtonProps> = () => {
                     </MenuItem>
                     <MenuItem
                       fontSize={"xl"}
-                      onClick={() => router.push("/harvest")}
-                    >
-                      Harvest
-                    </MenuItem>
-                    <MenuItem
-                      fontSize={"xl"}
-                      onClick={() => router.push("/delayed-unstake")}
-                    >
-                      Delayed Unstake
-                    </MenuItem>
-                    <MenuItem
-                      fontSize={"xl"}
                       onClick={() => router.push("/faq")}
                     >
                       FAQ
                     </MenuItem>
-                    {selector?.isSignedIn() && (
-                      <MenuItem fontSize={"xl"} onClick={handleSignOut}>
-                        Disconnect
-                      </MenuItem>
-                    )}
                     <Flex
                       p="6px 12px"
                       justifyContent="space-between"

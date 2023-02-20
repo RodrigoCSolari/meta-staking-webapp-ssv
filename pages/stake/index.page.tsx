@@ -11,27 +11,26 @@ import {
   SkeletonCircle,
   Text,
 } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
-import { useGetMetrics } from "../../hooks/useGetMetrics";
 import { Apy } from "../../components/Apy";
 import { UserStats } from "./UserStats";
 import { MetapoolStats } from "./MetapoolStats";
-import { toStringDec2 } from "../../lib/util";
 import { InfoContainer } from "../../components/InfoContainer";
 import { StakeForm } from "./StakeForm";
-import { disconnect } from "process";
+import { useAccount } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 
 const Stake = () => {
+  const { isConnected, address } = useAccount();
   const [DisconnectInput, setDisconnectInput] = useState("");
-  const { modal, selector, accountId } = useWalletSelector();
-
-  const { data: metrics } = useGetMetrics();
+  const { openConnectModal } = useConnectModal();
 
   const handleSignIn = () => {
     if (DisconnectInput) {
       localStorage.setItem("disconnectInput", DisconnectInput);
     }
-    modal.show();
+    if (openConnectModal) {
+      openConnectModal();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -45,7 +44,7 @@ const Stake = () => {
   };
 
   useEffect(() => {
-    if (accountId === null) {
+    if (!address) {
       localStorage.setItem("disconnectInput", "");
     }
   }, []);
@@ -55,13 +54,8 @@ const Stake = () => {
       <Container maxW="container.lg" className="flex">
         <Center>
           <VStack mb="20px" rowGap="10px">
-            <SkeletonCircle boxSize="120px" isLoaded={metrics !== undefined}>
-              {metrics && (
-                <Apy
-                  data={toStringDec2(metrics.st_near_30_day_apy)}
-                  boxSize="120px"
-                />
-              )}
+            <SkeletonCircle boxSize="120px" isLoaded={true}>
+              <Apy data="9.99" />
             </SkeletonCircle>
             <Heading
               as="h1"
@@ -70,10 +64,10 @@ const Stake = () => {
               fontSize="2em"
               fontWeight="500"
             >
-              Stake NEAR
+              Stake ETHEREUM
             </Heading>
 
-            {!selector?.isSignedIn() ? (
+            {!isConnected ? (
               <InfoContainer>
                 <InputGroup>
                   <InputLeftElement
@@ -82,10 +76,10 @@ const Stake = () => {
                     fontSize="1.5em"
                     fontWeight="500"
                   >
-                    Ⓝ
+                    Ⓔ
                   </InputLeftElement>
                   <Input
-                    placeholder="Near amount"
+                    placeholder="Ethereum amount"
                     type="number"
                     id="stakeInput"
                     onKeyDown={handleKeyDown}

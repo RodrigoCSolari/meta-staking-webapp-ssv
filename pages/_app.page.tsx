@@ -8,18 +8,16 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 
 import Router, { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as gtag from "../lib/gtag";
 import NProgress from "nprogress";
 import NextHead from "next/head";
-import "@near-wallet-selector/modal-ui/styles.css";
 
 import "../styles/nprogress.css";
 import Header from "../components/Header";
 import "@fontsource/inter/500.css";
-import { WalletSelectorContextProvider } from "../contexts/WalletSelectorContext";
-import ErrorHandlerHash from "../components/ErrorHandlerHash";
 import ResponseHandler from "../components/ResponseHandler";
+import WalletContext from "../contexts/WalletContext";
 
 const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV == "production";
 const queryClient = new QueryClient();
@@ -46,49 +44,55 @@ function App({ Component, pageProps }: AppProps) {
   Router.events.on("routeChangeComplete", () => NProgress.done());
   Router.events.on("routeChangeError", () => NProgress.done());
 
-  return (
-    <ChakraProvider theme={theme}>
-      <WalletSelectorContextProvider>
-        <QueryClientProvider client={queryClient}>
-          <NextHead>
-            <title>
-              Liquid stake NEAR tokens from NEAR wallet. Get stNEAR - Meta Pool
-            </title>
-            <meta
-              name="description"
-              content="Liquid Stake NEAR tokens held in your NEAR wallet. Earn ~10% staking rewards. Unstake immediately your stNEAR tokens with Meta Pool stNEAR-NEAR liquidity pool "
-            />
-            <link rel="icon" href="/favicon.ico" />
-            <meta charSet="UTF-8" />
-          </NextHead>
-          <Header />
-          <Component {...pageProps} />
-          <ResponseHandler />
-          <ErrorHandlerHash />
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-          {/* enable analytics script only for production */}
-          {/*isProduction && (
-            <>
-              <Script
+  return (
+    mounted && (
+      <ChakraProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <WalletContext>
+            <NextHead>
+              <title>
+                Liquid stake ETHEREUM tokens from ETHEREUM wallet. Get
+                metaETHEREUM - Meta Pool
+              </title>
+              <meta
+                name="description"
+                content="Liquid Stake ETHEREUM tokens held in your ETHEREUM wallet. Earn ~10% staking rewards. Unstake immediately your metaETHEREUM tokens with Meta Pool metaETHEREUM-ETHEREUM liquidity pool "
+              />
+              <link rel="icon" href="/favicon.ico" />
+              <meta charSet="UTF-8" />
+            </NextHead>
+            <Header />
+            <Component {...pageProps} />
+            <ResponseHandler />
+
+            {/* enable analytics script only for production */}
+            {/*isProduction && (
+                <>
+                <Script
                 src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
                 strategy="lazyOnload"
-              />
-              <Script id="google-analytics" strategy="lazyOnload">
+                />
+                <Script id="google-analytics" strategy="lazyOnload">
                 {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 gtag('js', new Date());
-
+                
                 gtag('config', '${gtag.GA_TRACKING_ID}');
-              `}
-              </Script>
-            </>
+                `}
+                </Script>
+                </>
           )*/}
-
+          </WalletContext>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
-      </WalletSelectorContextProvider>
-    </ChakraProvider>
+      </ChakraProvider>
+    )
   );
 }
 

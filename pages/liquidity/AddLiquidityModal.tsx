@@ -16,18 +16,18 @@ import {
   Text,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { useGetMetapoolAccountInfo } from "../../hooks/useGetMetapoolAccountInfo";
-import { useGetMetapoolContractState } from "../../hooks/useGetMetapoolContractState";
-import { useGetNearBalance } from "../../hooks/useGetNearBalance";
-import { nslpAddLiquidity } from "../../lib/metapool";
-import { toNumber, toStringDec, toStringDecMin, yton } from "../../lib/util";
+import { wtoe, wtoeCommify } from "../../lib/util";
 import { AlertMsg } from "../../components/AlertMsg";
 import { getMaxStakeAmount } from "../../utils/unstakeHandlers";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import { useTxSuccessStore } from "../../stores/txSuccessStore";
 import { useQueryClient } from "react-query";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
 import { checkTxErrorAmounts } from "../../services/transaction/checkTxErrorAmounts.service";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { stake } from "../../lib/metapool";
+import { useSigner } from "wagmi";
+import { useGetEthereumBalance } from "../../hooks/useGetEthereumBalance";
+import { DetailsLink } from "../../components/DetailsLink";
 
 type Props = {
   showAddLiquidityModal: boolean;
@@ -44,12 +44,12 @@ export const AddLiquidityModal = ({
   const [inputValue, setInputValue] = useState("");
 
   const { setTxSuccess } = useTxSuccessStore();
-  const { accountId, selector } = useWalletSelector();
 
   const queryClient = useQueryClient();
-  const { data: contractState } = useGetMetapoolContractState();
-  const { data: nearBalance } = useGetNearBalance(accountId!);
-  const { data: accountInfo } = useGetMetapoolAccountInfo(accountId!);
+
+  const { data: contractData } = useGetContractData();
+  const { data: signer } = useSigner();
+  const { data: ethereumBalance } = useGetEthereumBalance();
 
   const handleOnClose = () => {
     if (closeEnabled) {
@@ -61,8 +61,11 @@ export const AddLiquidityModal = ({
   };
 
   const handleMaxClick = () => {
-    let maxDepositAmount = getMaxStakeAmount(nearBalance!);
-    setInputValue(toStringDecMin(yton(maxDepositAmount)));
+    if (ethereumBalance === undefined) {
+      return;
+    }
+    let maxStakeAmount = getMaxStakeAmount(ethereumBalance);
+    setInputValue(wtoe(maxStakeAmount));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +81,8 @@ export const AddLiquidityModal = ({
   const handleAddLiquidityClick = async () => {
     const errorMsg = checkTxErrorAmounts(
       inputValue,
-      nearBalance!,
-      yton(contractState?.min_deposit_amount!) * 2,
+      ethereumBalance!,
+      contractData?.minEthDeposit!,
       "Add"
     );
     if (errorMsg) {
@@ -88,21 +91,13 @@ export const AddLiquidityModal = ({
     }
     setcloseEnabled(false);
     try {
-      const amount = toNumber(inputValue);
-      const wallet = await selector.wallet();
-      if (!accountId) {
-        throw Error("account id undefined");
-      }
-      await nslpAddLiquidity(wallet, accountId, amount);
-      setInputValue("");
+      const resp = await stake(signer!, inputValue);
+      await resp.wait();
       await queryClient.refetchQueries();
+      setInputValue("");
       setTxSuccess({
         title: "Liquidity Added Successfully",
-        description: `You Own ${
-          accountInfo?.nslp_share_bp! == 0
-            ? "<0.01"
-            : toStringDecMin(accountInfo?.nslp_share_bp! / 100)
-        }% Of The Liquidity Pool`,
+        description: <DetailsLink hash={resp.hash} />,
       });
       handleOnClose();
     } catch (ex) {
@@ -124,12 +119,11 @@ export const AddLiquidityModal = ({
         <ModalHeader>Add Liquidity</ModalHeader>
         <ModalCloseButton display={closeEnabled ? undefined : "none"} />
         <ModalBody>
-          <Text textAlign="center">{`Available ${toStringDec(
-            yton(nearBalance!),
-            2
-          )} Ⓝ - Min.Amount ${(
-            yton(contractState?.min_deposit_amount!) * 2
-          ).toString()} Ⓝ`}</Text>
+          <Text textAlign="center">{`Available ${wtoeCommify(
+            ethereumBalance!
+          )} Ⓔ - Min.Amount ${wtoe(
+            contractData?.minEthDeposit
+          ).toString()} Ⓔ`}</Text>
           <Flex flexDirection="column" rowGap="10px">
             <InputGroup>
               <InputLeftElement
@@ -138,7 +132,7 @@ export const AddLiquidityModal = ({
                 fontSize="1.5em"
                 fontWeight="500"
               >
-                Ⓝ
+                Ⓔ
               </InputLeftElement>
               <Input
                 placeholder="Amount"
@@ -199,8 +193,7 @@ export const AddLiquidityModal = ({
           <Divider />
           <Text fontSize="0.7em">
             {`By adding liquidity you'll receive a share of the liquidity pool. On
-            each liquid unstake you'll get a proportion of the fees and also
-            $META tokens`}
+            each liquid unstake you'll get a proportion of the fees.`}
           </Text>
         </ModalFooter>
       </ModalContent>

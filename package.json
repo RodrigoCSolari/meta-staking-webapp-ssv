@@ -15,24 +15,14 @@
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
     "@fontsource/inter": "^4.5.14",
-    "@metapool/liquid-staking-sdk": "^0.1.0",
-    "@near-wallet-selector/core": "^7.0.1",
-    "@near-wallet-selector/here-wallet": "^7.1.0",
-    "@near-wallet-selector/ledger": "^7.0.1",
-    "@near-wallet-selector/math-wallet": "^7.0.1",
-    "@near-wallet-selector/meteor-wallet": "^7.2.0",
-    "@near-wallet-selector/modal-ui": "^7.0.1",
-    "@near-wallet-selector/near-wallet": "^7.0.1",
-    "@near-wallet-selector/nightly": "^7.0.1",
-    "@near-wallet-selector/nightly-connect": "^7.0.1",
-    "@near-wallet-selector/wallet-connect": "^7.0.1",
+    "@rainbow-me/rainbowkit": "^0.8.1",
     "@types/gtag.js": "^0.0.10",
     "better-sqlite3": "^7.6.2",
     "dotenv": "^16.0.0",
+    "ethers": "^5.7.2",
     "framer-motion": "^6.2.8",
     "html-react-parser": "^1.4.10",
     "moment": "^2.29.4",
-    "near-api-js": "^0.44.2",
     "next": "12.1.0",
     "nextjs-color-mode": "^1.0.5",
     "nprogress": "^0.2.0",
@@ -40,6 +30,7 @@
     "react-dom": "17.0.1",
     "react-query": "^3.34.16",
     "rxjs": "^7.5.6",
+    "wagmi": "^0.9.6",
     "web-vitals": "^2.1.4",
     "zustand": "^3.7.1"
   },
@@ -55,6 +46,6 @@
     "eslint": "8.11.0",
     "eslint-config-next": "12.1.0",
     "prettier": "2.6.2",
-    "typescript": "4.6.2"
+    "typescript": "4.7.2"
   }
 }

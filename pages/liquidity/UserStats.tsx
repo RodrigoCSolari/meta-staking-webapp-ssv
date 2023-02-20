@@ -1,35 +1,63 @@
-import { Divider, Flex, Skeleton } from "@chakra-ui/react";
+import { Divider, Skeleton } from "@chakra-ui/react";
 import React from "react";
-import { InfoContainer } from "../../components/InfoContainer";
 import TokenInfo from "../../components/TokenInfo";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
-import { useGetMetapoolAccountInfo } from "../../hooks/useGetMetapoolAccountInfo";
-import { useGetNearBalance } from "../../hooks/useGetNearBalance";
-import { toStringDec, yton } from "../../lib/util";
+import { wtoeCommify, weiToDollarStr } from "../../lib/util";
+import { InfoContainer } from "../../components/InfoContainer";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { useGetEthereumDollarPrice } from "../../hooks/useGetEthereumDollarPrice";
+import { useGetEthereumBalance } from "../../hooks/useGetEthereumBalance";
 
 export const UserStats = () => {
-  const { accountId } = useWalletSelector();
-
-  const { data: nearBalance } = useGetNearBalance(accountId!);
-  const { data: accountInfo } = useGetMetapoolAccountInfo(accountId!);
+  const { data: contractData } = useGetContractData();
+  const { data: ethereumDollarPrice } = useGetEthereumDollarPrice();
+  const { data: ethereumBalance } = useGetEthereumBalance();
 
   return (
     <InfoContainer>
-      <Skeleton isLoaded={nearBalance !== undefined}>
+      <Skeleton isLoaded={ethereumBalance !== undefined}>
         <TokenInfo
-          description="Available NEAR wallet"
-          tooltip="The amount of NEAR in your wallet"
-          amount={toStringDec(yton(nearBalance!), 2)}
-          symbol="Ⓝ"
+          description="Available ETHEREUM wallet"
+          tooltip="The amount of ETHEREUM in your wallet"
+          amount={wtoeCommify(ethereumBalance)}
+          symbol="Ⓔ"
         />
       </Skeleton>
       <Divider />
-      <Skeleton isLoaded={accountInfo !== undefined}>
+      <Skeleton
+        isLoaded={
+          ethereumBalance !== undefined && ethereumDollarPrice !== undefined
+        }
+      >
         <TokenInfo
-          description="Your stNEAR Tokens"
-          tooltip="The amount of stNEAR tokens you have available in your wallet"
-          amount={toStringDec(yton(accountInfo?.st_near!))}
-          symbol="Ⓢ"
+          description="wallet ETHEREUM in USD"
+          tooltip=""
+          amount={weiToDollarStr(ethereumBalance, ethereumDollarPrice)}
+          symbol="$"
+        />
+      </Skeleton>
+      <Divider />
+      <Skeleton isLoaded={contractData !== undefined}>
+        <TokenInfo
+          description="Your ETHEREUM Staked"
+          tooltip="your amount of ethereum in the contract"
+          amount={wtoeCommify(contractData?.userBalance)}
+          symbol="Ⓔ"
+        />
+      </Skeleton>
+      <Divider />
+      <Skeleton
+        isLoaded={
+          contractData !== undefined && ethereumDollarPrice !== undefined
+        }
+      >
+        <TokenInfo
+          description="Your ETHEREUM Staked in USD"
+          tooltip=""
+          amount={weiToDollarStr(
+            contractData?.userBalance,
+            ethereumDollarPrice
+          )}
+          symbol="$"
         />
       </Skeleton>
     </InfoContainer>

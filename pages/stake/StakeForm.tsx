@@ -10,12 +10,11 @@ import {
   Tooltip,
   Box,
   Skeleton,
+  Link,
 } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
 import { InfoIcon } from "@chakra-ui/icons";
-import { depositAndStake } from "../../lib/metapool";
-import { useGetNearBalance } from "../../hooks/useGetNearBalance";
-import { toNumber, toStringDecMin, yton } from "../../lib/util";
+import { stake } from "../../lib/metapool";
+import { wtoe, wtoeCommify } from "../../lib/util";
 import { useTxSuccessStore } from "../../stores/txSuccessStore";
 import { useErrorMsgStore } from "../../stores/ErrorMsgStore";
 import { getErrorMessage } from "../../utils/getErrorMessage";
@@ -23,8 +22,11 @@ import { AlertMsg } from "../../components/AlertMsg";
 import { getMaxStakeAmount } from "../../utils/unstakeHandlers";
 import { InfoContainer } from "../../components/InfoContainer";
 import { useQueryClient } from "react-query";
-import { useGetMetapoolContractState } from "../../hooks/useGetMetapoolContractState";
 import { checkTxErrorAmounts } from "../../services/transaction/checkTxErrorAmounts.service";
+import { useAccount, useSigner } from "wagmi";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { useGetEthereumBalance } from "../../hooks/useGetEthereumBalance";
+import { DetailsLink } from "../../components/DetailsLink";
 
 export const StakeForm = () => {
   const [alertMsg, setAlertMsg] = useState("");
@@ -34,22 +36,19 @@ export const StakeForm = () => {
   const { setErrorMsg } = useErrorMsgStore();
   const { setTxSuccess } = useTxSuccessStore();
 
-  const { modal, selector, accountId } = useWalletSelector();
-
   const queryClient = useQueryClient();
-  const { data: nearBalance } = useGetNearBalance(accountId!);
-  const { data: contractState } = useGetMetapoolContractState();
+  const { isConnected } = useAccount();
+  const { data: signer } = useSigner();
 
-  const handleSignIn = () => {
-    modal.show();
-  };
+  const { data: contractData } = useGetContractData();
+  const { data: ethereumBalance } = useGetEthereumBalance();
 
   const handleMaxClick = () => {
-    if (!selector.isSignedIn() || nearBalance === undefined || loadingStake) {
+    if (!isConnected || ethereumBalance === undefined || loadingStake) {
       return;
     }
-    let maxStakeAmount = getMaxStakeAmount(nearBalance);
-    setInputValue(toStringDecMin(yton(maxStakeAmount)));
+    let maxStakeAmount = getMaxStakeAmount(ethereumBalance);
+    setInputValue(wtoe(maxStakeAmount));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,8 +64,8 @@ export const StakeForm = () => {
   const handleStakeClick = async () => {
     const errorMsg = checkTxErrorAmounts(
       inputValue,
-      nearBalance!,
-      yton(contractState?.min_deposit_amount!),
+      ethereumBalance!,
+      contractData?.minEthDeposit!,
       "Stake"
     );
     if (errorMsg) {
@@ -75,14 +74,14 @@ export const StakeForm = () => {
     }
     try {
       setLoadingStake(true);
-      const wallet = await selector.wallet();
-      if (!accountId) {
-        throw Error("account id undefined");
-      }
-      await depositAndStake(wallet, accountId, toNumber(inputValue));
+      const resp = await stake(signer!, inputValue);
+      await resp.wait();
       await queryClient.refetchQueries();
       setInputValue("");
-      setTxSuccess({ title: "Tokens Staked Successfully" });
+      setTxSuccess({
+        title: "Tokens Staked Successfully",
+        description: <DetailsLink hash={resp.hash} />,
+      });
     } catch (error) {
       const errorMsg = getErrorMessage(error);
       setErrorMsg(errorMsg);
@@ -92,7 +91,6 @@ export const StakeForm = () => {
 
   useEffect(() => {
     const inputValue = localStorage.getItem("disconnectInput");
-    console.log(inputValue);
     if (inputValue) {
       setInputValue(inputValue);
       localStorage.setItem("disconnectInput", "");
@@ -108,10 +106,10 @@ export const StakeForm = () => {
           fontSize="1.5em"
           fontWeight="500"
         >
-          Ⓝ
+          Ⓔ
         </InputLeftElement>
         <Input
-          placeholder="Near amount"
+          placeholder="Ethereum amount"
           type="number"
           id="stakeInput"
           onChange={handleInputChange}
@@ -136,14 +134,14 @@ export const StakeForm = () => {
       </Box>
       <Button
         colorScheme="purple"
-        onClick={selector.isSignedIn() ? handleStakeClick : handleSignIn}
+        onClick={handleStakeClick}
         isLoading={loadingStake}
         loadingText="Staking..."
         spinnerPlacement="end"
       >
-        {selector.isSignedIn() ? "Stake" : "Choose A Wallet To Stake"}
+        {"Stake"}
       </Button>
-      <Skeleton isLoaded={contractState !== undefined}>
+      <Skeleton isLoaded={contractData !== undefined}>
         <Flex
           alignItems="center"
           justifyContent="center"
@@ -152,11 +150,11 @@ export const StakeForm = () => {
         >
           <Text>info</Text>
           <Tooltip
-            label={`When you stake you get stNEAR tokens. While you hold stNEAR tokens, 
+            label={`When you stake you get metaETHEREUM tokens. While you hold metaETHEREUM tokens, 
                   you get staking rewards at the end of every epoch. You can unstake at any time.
-                  Min amount to stake: ${yton(
-                    contractState?.min_deposit_amount!
-                  )} NEAR.`}
+                  Min amount to stake: ${wtoeCommify(
+                    contractData?.minEthDeposit
+                  )} ETHER.`}
           >
             <InfoIcon />
           </Tooltip>

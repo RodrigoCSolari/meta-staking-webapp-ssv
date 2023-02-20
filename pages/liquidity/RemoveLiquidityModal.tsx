@@ -16,17 +16,17 @@ import {
   Text,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { useGetMetapoolAccountInfo } from "../../hooks/useGetMetapoolAccountInfo";
-import { nslpRemoveLiquidity } from "../../lib/metapool";
-import { toNumber, toStringDec, toStringDecMin, yton } from "../../lib/util";
-import { FinalExecutionOutcome } from "@near-wallet-selector/core";
-import { getTransactionLastResult } from "near-api-js/lib/providers";
+import { wtoe } from "../../lib/util";
 import { AlertMsg } from "../../components/AlertMsg";
 import { useTxSuccessStore } from "../../stores/txSuccessStore";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import { useQueryClient } from "react-query";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
 import { checkTxErrorAmounts } from "../../services/transaction/checkTxErrorAmounts.service";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { useAccount, useSigner } from "wagmi";
+import { useGetEthereumBalance } from "../../hooks/useGetEthereumBalance";
+import { withdraw } from "../../lib/metapool";
+import { DetailsLink } from "../../components/DetailsLink";
 
 type Props = {
   showRemoveLiquidityModal: boolean;
@@ -43,10 +43,12 @@ export const RemoveLiquidityModal = ({
   const [inputValue, setInputValue] = useState("");
 
   const { setTxSuccess } = useTxSuccessStore();
-  const { accountId, selector } = useWalletSelector();
+  const { data: contractData } = useGetContractData();
+  const { isConnected } = useAccount();
+  const { data: ethereumBalance } = useGetEthereumBalance();
+  const { data: signer } = useSigner();
 
   const queryClient = useQueryClient();
-  const { data: accountInfo } = useGetMetapoolAccountInfo(accountId!);
 
   const handleOnClose = () => {
     if (closeEnabled) {
@@ -58,7 +60,7 @@ export const RemoveLiquidityModal = ({
   };
 
   const handleMaxClick = () => {
-    const maxAmount = toStringDecMin(yton(accountInfo?.nslp_share_value!));
+    const maxAmount = wtoe(contractData?.userBalance);
     setInputValue(maxAmount);
   };
 
@@ -74,9 +76,9 @@ export const RemoveLiquidityModal = ({
   const handleRemoveLiquidityClick = async () => {
     const errorMsg = checkTxErrorAmounts(
       inputValue,
-      accountInfo?.nslp_share_value!,
-      0,
-      "Stake"
+      contractData?.userBalance!,
+      contractData?.minEthDeposit!,
+      "Remove"
     );
     if (errorMsg) {
       setAlertMsg(errorMsg);
@@ -84,32 +86,14 @@ export const RemoveLiquidityModal = ({
     } else {
       setcloseEnabled(false);
       try {
-        const amount = toNumber(inputValue);
-        const wallet = await selector.wallet();
-        if (!accountId) {
-          throw Error("account id undefined");
-        }
-        let result = await nslpRemoveLiquidity(wallet, accountId, amount);
+        const resp = await withdraw(signer!, inputValue);
+        await resp.wait();
         setInputValue("");
         await queryClient.refetchQueries();
-        if (result && "receipts_outcome" in result) {
-          const resultFinalExecOutcome = result as FinalExecutionOutcome;
-          let txResult: { near: string; st_near: string } =
-            getTransactionLastResult(resultFinalExecOutcome);
-          setTxSuccess({
-            title: "Liquidity Removed Successfully",
-            description: (
-              <>
-                <Text textAlign="center">{`NEAR Received: ${toStringDec(
-                  yton(txResult.near)
-                )} Ⓝ`}</Text>
-                <Text textAlign="center">{`stNEAR Received: ${toStringDec(
-                  yton(txResult.st_near)
-                )} Ⓢ`}</Text>
-              </>
-            ),
-          });
-        }
+        setTxSuccess({
+          title: "Liquidity Removed Successfully",
+          description: <DetailsLink hash={resp.hash} />,
+        });
         handleOnClose();
       } catch (ex) {
         const msg = getErrorMessage(ex);
@@ -132,10 +116,7 @@ export const RemoveLiquidityModal = ({
         <ModalCloseButton display={closeEnabled ? undefined : "none"} />
         <ModalBody>
           <Text textAlign="center">
-            {`Your Share Value: ${toStringDec(
-              yton(accountInfo?.nslp_share_value!)
-            )}`}{" "}
-            Ⓝ
+            {`Your Share Value: ${wtoe(contractData?.userBalance!)}`} Ⓔ
           </Text>
           <Flex flexDirection="column" rowGap="10px">
             <InputGroup>
@@ -145,7 +126,7 @@ export const RemoveLiquidityModal = ({
                 fontSize="1.5em"
                 fontWeight="500"
               >
-                Ⓝ
+                Ⓔ
               </InputLeftElement>
               <Input
                 placeholder="Amount"
@@ -205,7 +186,7 @@ export const RemoveLiquidityModal = ({
         >
           <Divider />
           <Text fontSize="0.7em">
-            {`By removing liquidity you'll receive NEAR and stNEAR in proportion
+            {`By removing liquidity you'll receive ETHEREUM in proportion
             of your share of the liquidity pool.`}
           </Text>
         </ModalFooter>

@@ -11,31 +11,26 @@ import {
   Skeleton,
   Box,
 } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
 import { InfoIcon } from "@chakra-ui/icons";
-import { toNumber, toStringDecMin, yton } from "../../lib/util";
-import { useGetMetapoolContractState } from "../../hooks/useGetMetapoolContractState";
+import { wtoe } from "../../lib/util";
 import { checkUnstakeErrorAmounts } from "../../services/transaction/checkUnstakeErrorAmounts.service";
-import { useGetMetapoolAccountInfo } from "../../hooks/useGetMetapoolAccountInfo";
 import { UnstakeModal } from "./UnstakeModal";
-import { getUnstakeResultAsString } from "../../utils/unstakeHandlers";
 import { AlertMsg } from "../../components/AlertMsg";
 import { InfoContainer } from "../../components/InfoContainer";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { useAccount } from "wagmi";
 
 export const UnstakeForm = () => {
   const [alertMsg, setAlertMsg] = useState("");
   const [showUnstakeModal, setShowUnstakeModal] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const { selector, accountId } = useWalletSelector();
-
-  const { data: accountInfo } = useGetMetapoolAccountInfo(accountId!);
-  const { data: contractState } = useGetMetapoolContractState();
+  const { data: contractData } = useGetContractData();
+  const { isConnected } = useAccount();
 
   const handleMaxClick = () => {
-    if (selector.isSignedIn() && accountInfo) {
-      let maxStake = accountInfo.st_near;
-      setInputValue(toStringDecMin(yton(maxStake)));
+    if (isConnected && contractData) {
+      setInputValue(wtoe(contractData?.userBalance));
     }
   };
 
@@ -52,8 +47,7 @@ export const UnstakeForm = () => {
   const handleUnstakeClick = async () => {
     const errorMsg = checkUnstakeErrorAmounts(
       inputValue,
-      accountInfo?.st_near!,
-      contractState?.nslp_liquidity!
+      contractData?.userBalance!
     );
     if (errorMsg) {
       setAlertMsg(errorMsg);
@@ -67,17 +61,15 @@ export const UnstakeForm = () => {
       <InfoContainer>
         <InputGroup>
           <InputLeftElement
-            w="55px"
             pointerEvents="none"
             color="black"
+            fontSize="1.5em"
             fontWeight="500"
           >
-            <Text fontSize="1em">st</Text>
-            <Text fontSize="1.5em">Ⓝ</Text>
+            Ⓔ
           </InputLeftElement>
           <Input
-            pl="55px"
-            placeholder="stNear amount to unstake"
+            placeholder="ETHEREUM amount to unstake"
             type="number"
             id="unstakeInput"
             onChange={handleInputChange}
@@ -97,16 +89,9 @@ export const UnstakeForm = () => {
             type="warning"
           />
         </Box>
-        <Skeleton isLoaded={contractState !== undefined}>
+        <Skeleton isLoaded={contractData !== undefined}>
           <Text textAlign="center">
-            {toNumber(inputValue) <= 0
-              ? `Fee ${
-                  contractState?.nslp_current_discount_basis_points! / 100
-                } %`
-              : `Fee ${getUnstakeResultAsString(
-                  toNumber(inputValue),
-                  contractState!
-                )}`}
+            {`Fee ${contractData?.withdrawFee! / 100} %`}
           </Text>
         </Skeleton>
         <Button colorScheme="purple" onClick={handleUnstakeClick}>
@@ -120,18 +105,17 @@ export const UnstakeForm = () => {
         >
           <Text>info</Text>
           <Tooltip
-            label={`In order to skip the waiting period a fee is charged for Liquid Unstaking.
-        The fee varies based on the amount of liquidity available and the amount you want to unstake.`}
+            label={`The fee varies based on the amount of liquidity available and the amount you want to unstake.`}
           >
             <InfoIcon />
           </Tooltip>
         </Flex>
       </InfoContainer>
-      {contractState && inputValue !== "" && showUnstakeModal && (
+      {contractData && inputValue !== "" && showUnstakeModal && (
         <UnstakeModal
           inputValue={inputValue}
           setInputValue={setInputValue}
-          contractState={contractState}
+          contractData={contractData}
           setShowUnstakeModal={setShowUnstakeModal}
           showUnstakeModal={showUnstakeModal}
         />

@@ -1,14 +1,14 @@
 import { Container, Center, Heading, VStack, Text } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
 import { UserStats } from "./UserStats";
 import { LiquidityPoolStats } from "./LiquidityPoolStats";
 import { DisconnectedPage } from "../../components/DisconnectedPage";
 import { UnstakeForm } from "./UnstakeForm";
+import { useAccount } from "wagmi";
 
 const Unstake = () => {
-  const { selector } = useWalletSelector();
+  const { isConnected } = useAccount();
 
-  if (!selector.isSignedIn()) {
+  if (!isConnected) {
     return (
       <>
         <DisconnectedPage title="Liquid Unstake">

@@ -1,33 +1,30 @@
 import React, { useState } from "react";
 import { Button, Flex, Text, Skeleton, Divider } from "@chakra-ui/react";
-import { useWalletSelector } from "../../contexts/WalletSelectorContext";
-import { toStringDec, toStringDecMin, yton } from "../../lib/util";
-import { useGetMetapoolAccountInfo } from "../../hooks/useGetMetapoolAccountInfo";
+import { wtoe } from "../../lib/util";
 import { AddLiquidityModal } from "./AddLiquidityModal";
 import { RemoveLiquidityModal } from "./RemoveLiquidityModal";
 import { InfoContainer } from "../../components/InfoContainer";
+import { useGetContractData } from "../../hooks/useGetContractData";
+import { formatUnits } from "ethers/lib/utils.js";
 
 export const LiquidityManager = () => {
-  const { accountId } = useWalletSelector();
-
   const [showAddLiquidityModal, setShowAddLiquidityModal] = useState(false);
   const [showRemoveLiquidityModal, setShowRemoveLiquidityModal] =
     useState(false);
 
-  const { data: accountInfo } = useGetMetapoolAccountInfo(accountId!);
+  const { data: contractData } = useGetContractData();
+
   return (
     <>
       <InfoContainer>
-        <Skeleton isLoaded={accountInfo !== undefined}>
+        <Skeleton isLoaded={contractData !== undefined}>
           <Flex justifyContent="center">
             <Flex alignItems="center" columnGap="2px">
               <Text fontSize="1.1em">
-                {`Your Share Value: ${toStringDec(
-                  yton(accountInfo?.nslp_share_value!)
-                )}`}
+                {`Your Share Value: ${wtoe(contractData?.userBalance)}`}
               </Text>
               <Text w="1.5em" textAlign="center">
-                Ⓝ
+                Ⓔ
               </Text>
             </Flex>
           </Flex>
@@ -47,14 +44,19 @@ export const LiquidityManager = () => {
           </Button>
         </Flex>
         <Divider />
-        <Skeleton isLoaded={accountInfo !== undefined}>
+        <Skeleton isLoaded={contractData !== undefined}>
           <Flex justifyContent="center">
             <Flex alignItems="center" columnGap="2px">
-              <Text>
-                {`Your Share Of The Liquidity Pool: ${toStringDecMin(
-                  accountInfo?.nslp_share_bp! / 100
-                )} %`}
-              </Text>
+              {contractData && (
+                <Text>
+                  {`Your Share Of The Liquidity Pool: ${formatUnits(
+                    contractData
+                      ?.userBalance!.mul(10000)
+                      .div(contractData?.contractBalance!)!,
+                    2
+                  )} %`}
+                </Text>
+              )}
             </Flex>
           </Flex>
         </Skeleton>

@@ -1,4 +1,4 @@
-import { BoxProps, useToast } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useErrorMsgStore } from "../stores/ErrorMsgStore";
